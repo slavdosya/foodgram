@@ -34,7 +34,7 @@ class CustomUserViewSet(UserViewSet):
 
     def get_permissions(self):
         if self.action in ('list', 'create', 'retrieve'):
-            self.permission_classes = [AllowAny,]
+            self.permission_classes = [AllowAny, ]
         return super().get_permissions()
 
     @action(methods=['post', 'delete'], detail=True)
@@ -64,7 +64,7 @@ class CustomUserViewSet(UserViewSet):
                 raise serializers.ValidationError('Not Found', code=400)
             return Response(status=204)
 
-    @action(methods=['get',], detail=False,)
+    @action(methods=['get', ], detail=False,)
     def subscriptions(self, request, **kwargs):
         user = request.user
         queryset = User.objects.filter(subscribed__user=user)
