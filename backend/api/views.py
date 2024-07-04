@@ -18,7 +18,8 @@ from api.permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 from api.serializers import (FavoriteSerializer, IngredientSerializer,
                              RecipeReadSerializer, RecipeShortSerializer,
                              RecipeWriteSerializer, TagSerializer)
-from recipes.models import Favorite, Ingredient, IngredientInRecipe, Recipe, ShoppingCart, Tag
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe,
+                            Recipe, ShoppingCart, Tag)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -131,7 +132,6 @@ class RecipeViewSet(ModelViewSet):
         response['Content-Disposition'] = f'attachment; filename={filename}'
 
         return response
-
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, **kwargs):

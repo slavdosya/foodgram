@@ -7,7 +7,9 @@ class Command(BaseCommand):
     help = 'Imports data from a CSV file into MyModel'
 
     def add_arguments(self, parser):
-        parser.add_argument('csv_file', type=str, help='The path to the CSV file to import')
+        parser.add_argument(
+            'csv_file', type=str, help='The path to the CSV file to import'
+        )
 
     def handle(self, *args, **kwargs):
         path = kwargs['csv_file']
