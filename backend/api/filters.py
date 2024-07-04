@@ -1,6 +1,7 @@
 from django_filters.rest_framework import FilterSet, filters
+from rest_framework.filters import SearchFilter
 
-from recipes.models import Tag, Recipe
+from recipes.models import Recipe, Tag
 
 
 class RecipeFilter(FilterSet):
@@ -19,3 +20,7 @@ class RecipeFilter(FilterSet):
         if value and not user.is_anonymous:
             return queryset.filter(favorites__user=user)
         return queryset
+
+
+class IngredientSearch(SearchFilter):
+    search_param = 'name'

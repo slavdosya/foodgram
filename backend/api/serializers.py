@@ -1,17 +1,14 @@
-from django.shortcuts import get_object_or_404
-from django.db.models import F
-from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-
-
-from recipes.models import (
-    Tag, Ingredient, Recipe, IngredientInRecipe, RecipeTag, Favorite
-)
-from users.serializers import CustomUserReadSerializer
-
 import base64
 
 from django.core.files.base import ContentFile
+from django.db.models import F
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
+
+from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
+                            RecipeTag, Tag)
+from users.serializers import CustomUserReadSerializer
 
 
 class Base64ImageField(serializers.ImageField):
@@ -22,7 +19,6 @@ class Base64ImageField(serializers.ImageField):
             data = ContentFile(base64.b64decode(imgstr), name='recipe.' + ext)
 
         return super().to_internal_value(data)
-
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -205,6 +201,3 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ('id', 'recipe', 'user')
-
-class UrlSerializer(serializers.Serializer):
-    pass

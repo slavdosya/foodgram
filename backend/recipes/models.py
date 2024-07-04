@@ -1,8 +1,7 @@
-from django.db import models
+from colorfield.fields import ColorField
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
-
-from colorfield.fields import ColorField
+from django.db import models
 
 User = get_user_model()
 
@@ -12,6 +11,13 @@ class Tag(models.Model):
     color = ColorField(default='#000000', verbose_name='Цвет')
     slug = models.SlugField(max_length=200, unique=True, verbose_name='Слаг')
 
+    class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
+
+    def __str__(self):
+        return self.name
+
 
 class Ingredient(models.Model):
     name = models.CharField(
@@ -20,6 +26,13 @@ class Ingredient(models.Model):
     measurement_unit = models.CharField(
         max_length=200, verbose_name='Единица измерения'
     )
+
+    class Meta:
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты'
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(models.Model):
@@ -53,6 +66,10 @@ class Recipe(models.Model):
         verbose_name='Время приготовления',
         validators=[MinValueValidator(1)],
     )
+
+    class Meta:
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
 
 
 class RecipeTag(models.Model):

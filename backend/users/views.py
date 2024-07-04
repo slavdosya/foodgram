@@ -1,23 +1,16 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-
-from users.serializers import (
-    CustomUserCreateSerializer,
-    CustomUserReadSerializer,
-    AvatarSerializer
-)
-
-
-from rest_framework.permissions import AllowAny
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.pagination import LimitOffsetPagination
-from djoser.views import UserViewSet
 from djoser.serializers import SetPasswordSerializer
+from djoser.views import UserViewSet
+from rest_framework import serializers
+from rest_framework.decorators import action
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
 from users.models import Subscribe
-from users.serializers import SubscribeSerializer
-from rest_framework import serializers
+from users.serializers import (AvatarSerializer, CustomUserCreateSerializer,
+                               CustomUserReadSerializer, SubscribeSerializer)
 
 User = get_user_model()
 

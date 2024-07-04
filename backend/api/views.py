@@ -1,28 +1,24 @@
+from django.http import HttpResponse, HttpResponseRedirect
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from api.serializers import (
-    TagSerializer, IngredientSerializer, RecipeWriteSerializer,
-    RecipeReadSerializer, RecipeShortSerializer, FavoriteSerializer
-)
-from api.filters import RecipeFilter
-from recipes.models import Tag, Ingredient, Recipe, ShoppingCart, Favorite
-from reportlab.pdfgen import canvas
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase import pdfmetrics
-from django.http import FileResponse, HttpResponseRedirect
 from django.utils import baseconv
-
-
-from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.serializers import ValidationError
-from rest_framework import filters
-from rest_framework import status
-from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
-from api.permissions import IsAuthorOrReadOnly, IsAdminOrReadOnly
+from rest_framework import filters, status
+from rest_framework.decorators import action
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+
+from api.error import ValidationError404
+from api.filters import RecipeFilter, IngredientSearch
+from api.permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
+from api.serializers import (FavoriteSerializer, IngredientSerializer,
+                             RecipeReadSerializer, RecipeShortSerializer,
+                             RecipeWriteSerializer, TagSerializer)
+from recipes.models import Favorite, Ingredient, IngredientInRecipe, Recipe, ShoppingCart, Tag
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -35,8 +31,8 @@ class IngridientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
-    filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('name',)
+    filter_backends = (IngredientSearch,)
+    search_fields = ('^name',)
 
 
 class RecipeViewSet(ModelViewSet):
@@ -78,7 +74,7 @@ class RecipeViewSet(ModelViewSet):
             try:
                 recipe = Recipe.objects.get(pk=self.kwargs['pk'])
             except Recipe.DoesNotExist:
-                raise ValidationError('Recipe does not exist', code=400)
+                raise ValidationError404('Recipe does not exist')
             serializer = RecipeShortSerializer(recipe)
             if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
                 raise ValidationError('Товар уже существует в корзине')
@@ -95,24 +91,47 @@ class RecipeViewSet(ModelViewSet):
             shopping_cart.delete()
             return Response(status=204)
 
+    def ingredients_to_txt(ingredients):
+        """Метод для объединения ингредиентов в список для загрузки"""
+
+        shopping_list = ''
+        for ingredient in ingredients:
+            shopping_list += (
+                f"{ingredient['ingredient__name']}  - "
+                f"{ingredient['sum']}"
+                f"({ingredient['ingredient__measurement_unit']})\n"
+            )
+        return shopping_list
+
     @action(detail=False, methods=['get'])
     def download_shopping_cart(self, request):
         user = request.user
-        shopping_cart = ShoppingCart.objects.filter(user=user)
+        if not user.shopping_cart.exists():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        pdf_file = "shopping_cart.pdf"
-        pdf = canvas.Canvas(pdf_file)
-        pdfmetrics.registerFont(TTFont('ArialUnicode', 'arial.ttf'))
-        pdf.setFont("ArialUnicode", 12)
-        pdf.drawString(100, 800, "Продуктовая корзина:")
-        y_position = 780
-        for obj in shopping_cart:
-            ingredients = obj.recipe.ingredients.all()
-            for ingredient in ingredients:
-                pdf.drawString(100, y_position, ingredient.name)
-                y_position -= 20
-        pdf.save()
-        return FileResponse(open(pdf_file, 'rb'), as_attachment=True, filename='shopping_cart.pdf')
+        ingredients = IngredientInRecipe.objects.filter(
+            recipe__shopping_cart__user=request.user
+        ).values(
+            'ingredient__name',
+            'ingredient__measurement_unit'
+        ).annotate(amount=Sum('amount'))
+
+        shopping_list = (
+            f'Список покупок для: {user.get_full_name()}\n\n'
+        )
+        shopping_list += '\n'.join([
+            f'- {ingredient["ingredient__name"]} '
+            f'({ingredient["ingredient__measurement_unit"]})'
+            f' - {ingredient["amount"]}'
+            for ingredient in ingredients
+        ])
+
+        filename = f'{user.username}_shopping_list.txt'
+        response = HttpResponse(shopping_list, content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename={filename}'
+
+        return response
+
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, **kwargs):
@@ -120,7 +139,7 @@ class RecipeViewSet(ModelViewSet):
             try:
                 recipe = Recipe.objects.get(pk=self.kwargs['pk'])
             except Recipe.DoesNotExist:
-                raise ValidationError('Товар не найден', code=400)
+                raise ValidationError404('Товар не найден')
             if Favorite.objects.filter(
                 user=request.user, recipe=recipe
             ).exists():
@@ -162,6 +181,8 @@ class RecipeViewSet(ModelViewSet):
         return Response({'short-link': short_link}, status=status.HTTP_200_OK)
 
 # Декодирование сокращенной ссылки
+
+
 class ShortLinkView(APIView):
 
     def get(self, request, encoded_id):
