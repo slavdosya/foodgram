@@ -26,7 +26,7 @@ services:
     volumes:
       - static:/frontend_static
   gateway:
-    image: slavdosya/foodgram_gateway/
+    image: slavdosya/foodgram_gateway
     ports:
       - 8000:80 
     volumes:
