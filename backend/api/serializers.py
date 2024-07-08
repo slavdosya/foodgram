@@ -62,14 +62,6 @@ class CustomUserReadSerializer(UserSerializer):
         return instance
 
 
-class RecipeShortSerializer(serializers.ModelSerializer):
-    image = serializers.CharField()
-
-    class Meta:
-        model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
-
-
 class SubscribeSerializer(CustomUserReadSerializer):
     recipes = SerializerMethodField()
     is_subscribed = serializers.BooleanField(default=False)
@@ -273,5 +265,3 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ('id', 'recipe', 'user')
-
-
