@@ -78,23 +78,35 @@ class RecipeTag(models.Model):
         Recipe, on_delete=models.CASCADE, verbose_name='Рецепт'
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['tag', 'recipe'],
+                                    name='unique_tag_recipe')
+        ]
+
 
 class IngredientInRecipe(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='ingredientlist',
+        related_name='ingredient_list',
         verbose_name='Рецепт'
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredientlist',
+        related_name='ingredient_list',
         verbose_name='Ингредиент'
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['ingredient', 'recipe'],
+                                    name='unique_ingredient_in_recipe')
+        ]
 
 
 class ShoppingCart(models.Model):
@@ -111,6 +123,12 @@ class ShoppingCart(models.Model):
         verbose_name='Рецепт'
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'recipe'],
+                                    name='unique_user_recipe_shopping')
+        ]
+
 
 class Favorite(models.Model):
     user = models.ForeignKey(
@@ -125,3 +143,9 @@ class Favorite(models.Model):
         related_name='favorites',
         verbose_name='Рецепт'
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'recipe'],
+                                    name='unique_user_recipe_favorite')
+        ]
