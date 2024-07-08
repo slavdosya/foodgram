@@ -1,12 +1,16 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Sum
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import baseconv
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status
+from djoser.serializers import SetPasswordSerializer
+from djoser.views import UserViewSet
+from rest_framework import filters, serializers, status
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
@@ -15,25 +19,14 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from api.error import ValidationError404
 from api.filters import IngredientSearch, RecipeFilter
 from api.permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
-from api.serializers import (FavoriteSerializer, IngredientSerializer,
-                             RecipeReadSerializer, RecipeShortSerializer,
-                             RecipeWriteSerializer, TagSerializer)
+from api.serializers import (AvatarSerializer, CustomUserCreateSerializer,
+                             CustomUserReadSerializer, FavoriteSerializer,
+                             IngredientSerializer, RecipeReadSerializer,
+                             RecipeShortSerializer, RecipeWriteSerializer,
+                             SubscribeSerializer, TagSerializer)
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
-
-from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
-from djoser.serializers import SetPasswordSerializer
-from djoser.views import UserViewSet
-from rest_framework import serializers
-from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-
 from users.models import Subscribe
-from api.serializers import (AvatarSerializer, CustomUserCreateSerializer,
-                             CustomUserReadSerializer, SubscribeSerializer)
 
 User = get_user_model()
 
