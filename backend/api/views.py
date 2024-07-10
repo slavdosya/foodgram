@@ -23,7 +23,7 @@ from api.serializers import (AvatarSerializer, CustomUserCreateSerializer,
                              RecipeShortSerializer, RecipeWriteSerializer,
                              ShoppingCartSerializer, SubscribeSerializer,
                              TagSerializer)
-from api.utils import shopping_favotite
+from api.utils import create_or_delete_shopping_favotite
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe
@@ -63,7 +63,7 @@ class RecipeViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def shopping_cart(self, request, **kwargs):
-        return shopping_favotite(
+        return create_or_delete_shopping_favotite(
             model=ShoppingCart, pk=self.kwargs['pk'],
             serial=ShoppingCartSerializer,
             request=request, rs_serial=RecipeShortSerializer)
@@ -79,7 +79,7 @@ class RecipeViewSet(ModelViewSet):
         ).values(
             'ingredient__name',
             'ingredient__measurement_unit'
-        ).annotate(summ=Sum('amount'))
+        ).annotate(total_amount=Sum('amount'))
 
         shopping_list = (
             f'Список покупок для: {user.get_full_name()}\n\n'
@@ -87,7 +87,7 @@ class RecipeViewSet(ModelViewSet):
         shopping_list += '\n'.join([
             f'- {ingredient["ingredient__name"]} '
             f'({ingredient["ingredient__measurement_unit"]})'
-            f' - {ingredient["summ"]}'
+            f' - {ingredient["total_amount"]}'
             for ingredient in ingredients
         ])
 
@@ -99,7 +99,7 @@ class RecipeViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, **kwargs):
-        return shopping_favotite(
+        return create_or_delete_shopping_favotite(
             model=Favorite, pk=self.kwargs['pk'],
             serial=FavoriteSerializer,
             request=request, rs_serial=RecipeShortSerializer)

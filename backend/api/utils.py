@@ -19,7 +19,7 @@ def bulk_create_ingredients(ingredients, recipe):
     return IngredientInRecipe.objects.bulk_create(bulk_list)
 
 
-def shopping_favotite(model, request, pk, serial, rs_serial):
+def create_or_delete_shopping_favotite(model, request, pk, serial, rs_serial):
     user = request.user
     if request.method == 'POST':
         try:
