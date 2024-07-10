@@ -12,18 +12,18 @@ from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from api.error import ValidationError404
 from api.filters import IngredientSearch, RecipeFilter
 from api.permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 from api.serializers import (AvatarSerializer, CustomUserCreateSerializer,
                              CustomUserReadSerializer, FavoriteSerializer,
                              IngredientSerializer, RecipeReadSerializer,
                              RecipeShortSerializer, RecipeWriteSerializer,
-                             SubscribeSerializer, TagSerializer)
+                             ShoppingCartSerializer, SubscribeSerializer,
+                             TagSerializer)
+from api.utils import shopping_favotite
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe
@@ -53,19 +53,6 @@ class RecipeViewSet(ModelViewSet):
     filterset_class = RecipeFilter
     search_fields = ('tags',)
 
-    def get_queryset(self):
-        queryset = Recipe.objects.all()
-        in_shopping_cart = self.request.query_params.get('is_in_shopping_cart')
-        if in_shopping_cart == '1':
-            shopping_cart_ids = ShoppingCart.objects.all().values_list(
-                'recipe_id',
-            )
-            shopping_cart_list = Recipe.objects.filter(
-                id__in=shopping_cart_ids
-            )
-            return shopping_cart_list
-        return queryset
-
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
@@ -76,24 +63,10 @@ class RecipeViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def shopping_cart(self, request, **kwargs):
-        user = request.user
-        if request.method == 'POST':
-            try:
-                recipe = Recipe.objects.get(pk=self.kwargs['pk'])
-            except Recipe.DoesNotExist:
-                raise ValidationError404('Recipe does not exist')
-            serializer = RecipeShortSerializer(recipe)
-            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
-                raise ValidationError('Товар уже существует в корзине')
-            ShoppingCart.objects.create(user=user, recipe=recipe)
-            return Response(serializer.data, status=201)
-        recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
-        try:
-            shopping_cart = ShoppingCart.objects.get(user=user, recipe=recipe)
-        except ShoppingCart.DoesNotExist:
-            raise ValidationError('Товар не найден', code=404)
-        shopping_cart.delete()
-        return Response(status=204)
+        return shopping_favotite(
+            model=ShoppingCart, pk=self.kwargs['pk'],
+            serial=ShoppingCartSerializer,
+            request=request, rs_serial=RecipeShortSerializer)
 
     @action(detail=False, methods=['get'])
     def download_shopping_cart(self, request):
@@ -106,7 +79,7 @@ class RecipeViewSet(ModelViewSet):
         ).values(
             'ingredient__name',
             'ingredient__measurement_unit'
-        ).annotate(amount=Sum('amount'))
+        ).annotate(summ=Sum('amount'))
 
         shopping_list = (
             f'Список покупок для: {user.get_full_name()}\n\n'
@@ -114,7 +87,7 @@ class RecipeViewSet(ModelViewSet):
         shopping_list += '\n'.join([
             f'- {ingredient["ingredient__name"]} '
             f'({ingredient["ingredient__measurement_unit"]})'
-            f' - {ingredient["amount"]}'
+            f' - {ingredient["summ"]}'
             for ingredient in ingredients
         ])
 
@@ -126,31 +99,10 @@ class RecipeViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, **kwargs):
-        if request.method == 'POST':
-            try:
-                recipe = Recipe.objects.get(pk=self.kwargs['pk'])
-            except Recipe.DoesNotExist:
-                raise ValidationError404('Товар не найден')
-            if Favorite.objects.filter(
-                user=request.user, recipe=recipe
-            ).exists():
-                raise ValidationError('Товар уже существует в избранном')
-            data = {
-                'user': request.user.id,
-                'recipe': recipe.id
-            }
-            serializer = FavoriteSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
-                serializer_recipe = RecipeShortSerializer(recipe)
-                return Response(serializer_recipe.data, status=201)
-            return Response(serializer.errors, status=400)
-        recipe = get_object_or_404(Recipe, pk=self.kwargs['pk'])
-        favorite = Favorite.objects.filter(user=request.user, recipe=recipe)
-        if favorite.exists():
-            favorite.delete()
-            return Response(status=204)
-        raise ValidationError('Товар не найден', code=404)
+        return shopping_favotite(
+            model=Favorite, pk=self.kwargs['pk'],
+            serial=FavoriteSerializer,
+            request=request, rs_serial=RecipeShortSerializer)
 
     @action(
         methods=['get'],
@@ -177,13 +129,6 @@ class ShortLinkView(APIView):
             )
         recipe_id = baseconv.base64.decode(encoded_id)
         return redirect('recipes-detail', pk=recipe_id)
-
-
-'''
-=====================================
-User views
-=====================================
-'''
 
 
 class CustomUserViewSet(UserViewSet):

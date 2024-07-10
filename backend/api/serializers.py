@@ -1,24 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.db.models import F
-from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SerializerMethodField
 
 from api.fields import Base64ImageField
+from api.utils import bulk_create_ingredients
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
-                            Tag)
+                            ShoppingCart, Tag)
 from users.models import Subscribe
 
 User = get_user_model()
-
-
-'''
-=================================
-Users serializers
-=================================
-'''
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -93,21 +86,6 @@ class AvatarSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('avatar',)
-
-
-def bulk_ingredients(ingredients, recipe):
-    bulk_list = []
-    for ingredient in ingredients:
-        ingredient_obj = get_object_or_404(
-            Ingredient.objects.all(), pk=ingredient.get('id')
-        )
-        bulk_list.append(
-            IngredientInRecipe(
-                recipe=recipe,
-                ingredient=ingredient_obj,
-                amount=ingredient.get('amount'))
-        )
-    return IngredientInRecipe.objects.bulk_create(bulk_list)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -189,14 +167,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
-        bulk_ingredients(ingredients, recipe)
+        bulk_create_ingredients(ingredients, recipe)
         return recipe
 
     def update(self, instance, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         instance.ingredients.clear()
-        bulk_ingredients(ingredients, instance)
+        bulk_create_ingredients(ingredients, instance)
         instance.tags.clear()
         instance.tags.set(tags)
         return super().update(instance, validated_data)
@@ -264,4 +242,11 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Favorite
+        fields = ('id', 'recipe', 'user')
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ShoppingCart
         fields = ('id', 'recipe', 'user')
