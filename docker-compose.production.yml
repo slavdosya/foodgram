@@ -28,7 +28,7 @@ services:
   gateway:
     image: slavdosya/foodgram_gateway
     ports:
-      - 8000:80 
+      - 8000:80
     volumes:
       - static:/staticfiles/
       - media:/app/media

@@ -9,7 +9,7 @@ from djoser.serializers import SetPasswordSerializer
 from djoser.views import UserViewSet
 from rest_framework import filters, serializers, status
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
+from api.pagination import CustomPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,7 +23,7 @@ from api.serializers import (AvatarSerializer, CustomUserCreateSerializer,
                              RecipeShortSerializer, RecipeWriteSerializer,
                              ShoppingCartSerializer, SubscribeSerializer,
                              TagSerializer)
-from api.utils import create_or_delete_shopping_favotite
+from api.utils import create_or_delete_shopping_favorite
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe
@@ -48,7 +48,7 @@ class IngridientViewSet(ReadOnlyModelViewSet):
 class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = (IsAuthorOrReadOnly | IsAdminOrReadOnly,)
-    pagination_class = LimitOffsetPagination
+    pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_class = RecipeFilter
     search_fields = ('tags',)
@@ -63,7 +63,7 @@ class RecipeViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def shopping_cart(self, request, **kwargs):
-        return create_or_delete_shopping_favotite(
+        return create_or_delete_shopping_favorite(
             model=ShoppingCart, pk=self.kwargs['pk'],
             serial=ShoppingCartSerializer,
             request=request, rs_serial=RecipeShortSerializer)
@@ -99,7 +99,7 @@ class RecipeViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, **kwargs):
-        return create_or_delete_shopping_favotite(
+        return create_or_delete_shopping_favorite(
             model=Favorite, pk=self.kwargs['pk'],
             serial=FavoriteSerializer,
             request=request, rs_serial=RecipeShortSerializer)
@@ -133,7 +133,7 @@ class ShortLinkView(APIView):
 
 class CustomUserViewSet(UserViewSet):
     serializer_class = CustomUserCreateSerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = CustomPagination
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
