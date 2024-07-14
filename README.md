@@ -43,3 +43,5 @@
     python manage.py runserver
     ```
    
+### Ссылка на проект 
+https://foodgram-slava.zapto.org/recipes
