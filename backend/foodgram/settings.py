@@ -175,6 +175,10 @@ DJOSER = {
 # Route for image
 MEDIA_URL = '/media/'
 
+RECIPE_REDIRECT = 'recipes/'
+
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 CSV_FILE_DIR = os.path.join(BASE_DIR, 'ingredients')
+
+CSRF_TRUSTED_ORIGINS = ['https://foodgram-slava.zapto.org']

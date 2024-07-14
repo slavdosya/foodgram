@@ -28,6 +28,7 @@ from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe
 
+
 User = get_user_model()
 
 
@@ -128,7 +129,7 @@ class ShortLinkView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         recipe_id = baseconv.base64.decode(encoded_id)
-        return redirect('recipes-detail', pk=recipe_id)
+        return redirect(f'/recipes/{recipe_id}/',)
 
 
 class CustomUserViewSet(UserViewSet):

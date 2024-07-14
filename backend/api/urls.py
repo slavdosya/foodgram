@@ -4,6 +4,8 @@ from rest_framework import routers
 from api.views import (CustomUserViewSet, IngridientViewSet, RecipeViewSet,
                        TagViewSet)
 
+recipe_redirect = '/recipes/'
+
 router = routers.DefaultRouter()
 router.register(r'tags', TagViewSet)
 router.register(r'ingredients', IngridientViewSet)

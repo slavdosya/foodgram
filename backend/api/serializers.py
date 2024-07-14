@@ -231,7 +231,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
-    image = serializers.CharField()
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe
