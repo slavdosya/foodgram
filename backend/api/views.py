@@ -9,13 +9,13 @@ from djoser.serializers import SetPasswordSerializer
 from djoser.views import UserViewSet
 from rest_framework import filters, serializers, status
 from rest_framework.decorators import action
-from api.pagination import CustomPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.filters import IngredientSearch, RecipeFilter
+from api.pagination import CustomPagination
 from api.permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 from api.serializers import (AvatarSerializer, CustomUserCreateSerializer,
                              CustomUserReadSerializer, FavoriteSerializer,
@@ -27,7 +27,6 @@ from api.utils import create_or_delete_shopping_favorite
 from recipes.models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from users.models import Subscribe
-
 
 User = get_user_model()
 
